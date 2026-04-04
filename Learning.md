@@ -49,5 +49,19 @@ Instead of manually checking `if (!email)`, we use **Zod** to define a schema.
 
 ---
 
+## 🌉 Frontend Synchronization
+
+### 1. 🍪 Axios `withCredentials`
+Since our **Refresh Token** is now an `httpOnly` cookie, browsers will block it from being sent to our API by default.
+*   **Fix**: We added `withCredentials: true` to the global Axios instance. This tells the browser: "It's okay to bring the cookies along for the ride."
+
+### 2. 🔄 Silent Refresh Interceptor
+This is the "Magic" that keeps your session alive.
+*   **The Logic**: If an API call fails with a **401 Unauthorized** error (meaning your Access Token expired), the interceptor catches it *before* it breaks the app.
+*   **The Action**: It automatically calls `/api/auth/refresh`, gets a new token, updates `localStorage`, and retries the original failed request. 
+*   **Result**: The user never sees a login screen unless they are inactive for many days.
+
+---
+
 > [!TIP]
 > **Revision Tip:** Before starting any new controller, quickly look at the `Drizzle Query Patterns` section above to remind yourself of the syntax.

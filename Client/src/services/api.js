@@ -9,23 +9,69 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true, // Required for sending httpOnly cookies (Refresh Token) 
   headers: {
     'Content-Type': 'application/json'
   }
 })
 
 /**
- * ── AUTH SERVICE INTERCEPTOR ───────────────────────────────────────────────
- * Automatically attaches the JWT token from localStorage to every request.
+ * ── REQUEST INTERCEPTOR ───────────────────────────────────────────────────
+ * Automatically attaches the Access Token from localStorage to every request.
  */
 api.interceptors.request.use((config) => {
   const user = JSON.parse(localStorage.getItem('si_user') || 'null')
-  if (user && user.token) {
-    config.headers.Authorization = `Bearer ${user.token}`
+  
+  // We now expect the token to be in 'accessToken' field if using Dual Tokens
+  const token = user?.accessToken || user?.token 
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
   
   return config
 })
+
+/**
+ * ── RESPONSE INTERCEPTOR (SILENT REFRESH) ──────────────────────────────────
+ * Detects 401 errors, attempts to refresh the token, and retries the request.
+ */
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config
+
+    // If error is 401 and we haven't already tried to refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true
+
+      try {
+        // 1. Call refresh endpoint (browser will automatically send the refresh cookie)
+        const { data } = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true })
+        
+        const newAccessToken = data.accessToken
+
+        // 2. Update local storage with the new token
+        const user = JSON.parse(localStorage.getItem('si_user') || '{}')
+        user.accessToken = newAccessToken
+        user.token = newAccessToken // Backward compatibility
+        localStorage.setItem('si_user', JSON.stringify(user))
+
+        // 3. Retry the original request with the new token
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+        return api(originalRequest)
+      } catch (refreshError) {
+        // If refresh also fails, the session is truly dead -> Log out user
+        console.error('Refresh Token failed or expired:', refreshError)
+        localStorage.removeItem('si_user')
+        window.location.href = '/login'
+        return Promise.reject(refreshError)
+      }
+    }
+
+    return Promise.reject(error)
+  }
+)
 
 /* ==========================================================================
    1. AUTHENTICATION API

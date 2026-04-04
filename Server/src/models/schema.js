@@ -10,6 +10,12 @@ import {
   boolean 
 } from 'drizzle-orm/mysql-core';
 
+/**
+ * 🗄️ MODELS / SCHEMA DEFINITION
+ * This file defines the shape of our MySQL database using Drizzle ORM.
+ * All table relationships and constraints (like cascade deletes) are defined here.
+ */
+
 // 1. Inspectors Table
 export const inspectors = mysqlTable('inspectors', {
   id:           int('id').autoincrement().primaryKey(),
@@ -21,6 +27,7 @@ export const inspectors = mysqlTable('inspectors', {
   designation:  varchar('designation', { length: 100 }),
   region:       varchar('region', { length: 100 }),
   role:         mysqlEnum('role', ['inspector', 'admin']).default('inspector'),
+  refreshToken: varchar('refresh_token', { length: 500 }),
   createdAt:    timestamp('created_at').defaultNow(),
 });
 
