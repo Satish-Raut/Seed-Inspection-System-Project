@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1775415462821,
+      "tag": "0000_dry_edwin_jarvis",
+      "breakpoints": true
+    }
+  ]
+}

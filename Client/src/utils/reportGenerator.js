@@ -101,16 +101,8 @@ export const generateReport = async (current, stagesData, inspector = {}) => {
       doc.setFont('helvetica', 'italic')
       doc.setTextColor(100, 116, 139)
       
-      // Bypass Canvas pollution natively with a raw Blob pipeline!
-      const response = await fetch(fieldDetails.fieldImageUrl)
-      const blob = await response.blob()
+      const base64Data = await getBase64Image(fieldDetails.fieldImageUrl)
       
-      const base64Data = await new Promise((resolve) => {
-         const reader = new FileReader()
-         reader.onloadend = () => resolve(reader.result)
-         reader.readAsDataURL(blob)
-      })
-
       const localImg = new Image()
       await new Promise((resolve) => {
          localImg.onload = resolve
@@ -292,4 +284,28 @@ export const generateReport = async (current, stagesData, inspector = {}) => {
   // Save
   const fileName = `${APP_NAME}-Report-${current.cropType || 'Crop'}-${new Date().getTime()}.pdf`
   doc.save(fileName)
+}
+
+/**
+ * getBase64Image
+ * Helper that converts any image URL (Cloudinary, etc.) to a base64 string
+ * asynchronously using the native browser Blob/FileReader pipeline.
+ * @param {string} url 
+ * @returns {Promise<string>} - Base64 data string
+ */
+async function getBase64Image(url) {
+  try {
+    const response = await fetch(url)
+    const blob = await response.blob()
+    
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  } catch (error) {
+    console.error("Critical Image Fetch Error:", error)
+    throw error
+  }
 }
