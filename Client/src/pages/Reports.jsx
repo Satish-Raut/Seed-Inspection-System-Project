@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   CheckCircle2, XCircle, Clock, ChevronRight, 
   ArrowLeft, Download, Calendar, MapPin, 
@@ -18,11 +18,15 @@ const statusConfig = {
 
 export default function Reports() {
   const { user } = useAuth()
-  const { getInspectorInspections } = useInspection()
+  const { inspections, fetchInspections } = useInspection()
   const [selectedInspection, setSelectedInspection] = useState(null)
 
-  const inspections = getInspectorInspections(user?.id)
-  const completed = inspections.filter((i) => i.status !== 'In Progress' || i.stages?.length > 0)
+  useEffect(() => {
+    fetchInspections()
+  }, [])
+
+  const safeInspections = Array.isArray(inspections) ? inspections : [];
+  const completed = safeInspections.filter((i) => i.status !== 'In Progress' || i.stages?.length > 0)
 
   const formatDate = (iso) => new Date(iso).toLocaleDateString('en-IN', {
     day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -30,9 +34,9 @@ export default function Reports() {
 
   const getCropEmoji = (cropId) => CROP_TYPES.find((c) => c.id === cropId)?.emoji || '🌾'
 
-  const handleDownload = (e, insp) => {
+  const handleDownload = async (e, insp) => {
     e.stopPropagation()
-    generateReport(insp, insp.stages, user)
+    await generateReport(insp, insp.stages, user)
   }
 
   if (selectedInspection) {

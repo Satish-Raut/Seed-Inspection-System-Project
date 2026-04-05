@@ -5,15 +5,28 @@ import { useInspection } from '../../hooks/useInspection'
 import { PRODUCTION_TYPES } from '../../utils/constants'
 
 export default function ProductionType() {
-  const { current, setProductionType } = useInspection()
+  const { current, setProductionType, syncInspectionToDatabase } = useInspection()
   const navigate = useNavigate()
 
-  const handleSelect = (type) => {
+  const handleSelect = async (type) => {
+    // 1. Update Context State
     setProductionType(type.id, type.stages)
-    const id = current.id || 'NEW'
-    const crop = current.cropType || 'wheat'
-    const productionType = type.id || 'hybrid'
-    navigate(`/inspection/${id}/${crop}/${productionType}/stages`)
+    
+    try {
+      // 2. We now have all the required data! Sync it to the backend Database.
+      // We pass overrides to ensure the backend gets the data exactly as clicked,
+      // bypassing any React state batching delays.
+      const dbId = await syncInspectionToDatabase(type.id, type.stages)
+
+      const crop = current.cropType || 'wheat'
+      
+      // 3. Navigate to the dynamic Stages Overview using the REAL DB ID
+      navigate(`/inspection/${dbId}/${crop}/${type.id}/stages`)
+    } catch (error) {
+      const backendMessage = error.response?.data?.error || error.message;
+      alert(`Failed to create inspection: ${backendMessage}`);
+      console.error("Full Error Output: ", error.response || error);
+    }
   }
 
   return (

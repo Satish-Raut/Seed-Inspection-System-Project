@@ -18,7 +18,7 @@ export default function InspectionForm() {
   const stageNum = parseInt(stageNumber)
 
   // 1. Check for Wheat specialization
-  if (crop === 'wheat') {
+  if (crop?.toLowerCase() === 'wheat') {
     switch (stageNum) {
       case 1:  return <WheatStage1 stageNumber={1} />
       case 2:  return <WheatStage2 stageNumber={2} />

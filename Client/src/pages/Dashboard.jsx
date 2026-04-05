@@ -1,5 +1,6 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Clock, CheckCircle2, XCircle, Plus, Play, FileText } from 'lucide-react'
+import { Clock, CheckCircle2, XCircle, Plus, Play, FileText, Loader2 } from 'lucide-react'
 import AppLayout from '../components/AppLayout'
 import { useAuth } from '../hooks/useAuth'
 import { useInspection } from '../hooks/useInspection'
@@ -16,23 +17,37 @@ function StatCard({ icon: Icon, count, label, color, bg }) {
 
 export default function Dashboard() {
   const { user } = useAuth();
-
-  console.log("Details at Dashboard: ", user)
-
-  const { startNewInspection, getInspectorInspections } = useInspection()
+  
+  const { 
+    startNewInspection, 
+    inspections, 
+    fetchInspections, 
+    loading, 
+    current 
+  } = useInspection()
+  
   const navigate = useNavigate()
 
-  const inspections = getInspectorInspections(user?.id)
-  const pending = inspections.filter((i) => i.status === 'In Progress').length
-  const completed = inspections.filter((i) => i.status === 'Completed').length
-  const rejected = inspections.filter((i) => i.status === 'Rejected').length
+  useEffect(() => {
+    fetchInspections();
+  }, [])
 
-  const handleStartNew = () => {
-    const newInsp = startNewInspection()
-    navigate(`/inspection/${newInsp.id}/field`)
+  const safeInspections = Array.isArray(inspections) ? inspections : [];
+
+  const pending = safeInspections.filter((i) => i.status === 'In Progress').length
+  const completed = safeInspections.filter((i) => i.status === 'Completed').length
+  const rejected = safeInspections.filter((i) => i.status === 'Rejected').length
+
+  const handleStartNew = async () => {
+    try {
+      const realInstanceId = await startNewInspection()
+      navigate(`/inspection/${realInstanceId}/field`)
+    } catch(err) {
+      alert("Failed to initialize a new inspection session. Check connection.");
+    }
   }
 
-  const recentInspections = inspections.slice(0, 3)
+  const recentInspections = safeInspections.slice(0, 3)
 
   const greeting = () => {
     const h = new Date().getHours()
@@ -105,7 +120,7 @@ export default function Dashboard() {
           )}
 
           {/* Empty state */}
-          {inspections.length === 0 && (
+          {safeInspections.length === 0 && (
             <div className="bg-white rounded-3xl p-12 border border-border text-center">
               <div className="text-6xl mb-4">🌱</div>
               <h4 className="text-text-primary text-xl font-bold">No inspections yet</h4>

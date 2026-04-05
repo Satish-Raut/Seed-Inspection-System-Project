@@ -14,6 +14,9 @@ export const verifyToken = (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
+    
+    console.log("Auth header: ", authHeader);
+    console.log("Token: ", token);
 
     if (!token) {
       return res.status(401).json({ error: 'Initial Authentication failed - no token provided' });

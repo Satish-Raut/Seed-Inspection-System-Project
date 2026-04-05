@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { 
   ClipboardCheck, Tractor, Droplets, 
-  CheckCircle2, Info, TrendingUp, Sparkles
+  CheckCircle2, Info, TrendingUp, TrendingDown, Sparkles
 } from 'lucide-react'
 import AppLayout from '../../../../components/AppLayout'
 import { useInspection } from '../../../../hooks/useInspection'
@@ -14,20 +14,22 @@ export default function WheatStage3({ stageNumber = 3 }) {
   const { current, submitStage } = useInspection()
   const navigate = useNavigate()
 
+  const existingData = current?.stages?.find(s => s.stageNumber === stageNumber)?.formData || {}
+
   const [form, setForm] = useState({
     // Section A: Re-verification
-    roguingDone: false,
-    offTypesRemaining: '',
-    weedsRemoved: false,
-    diseasedHeadsRemoved: false,
+    roguingDone: existingData.roguingDone || false,
+    offTypesRemaining: existingData.offTypesRemaining || '',
+    weedsRemoved: existingData.weedsRemoved || false,
+    diseasedHeadsRemoved: existingData.diseasedHeadsRemoved || false,
     
     // Section B: Harvest Advisory
-    maturityUniformity: 85,
-    moistureEstimation: '12.5',
-    equipmentCleaned: false,
-    separateThreshing: false,
-    yieldEstimation: '',
-    notes: '',
+    maturityUniformity: existingData.maturityUniformity || 85,
+    moistureEstimation: existingData.moistureEstimation || '12.5',
+    equipmentCleaned: existingData.equipmentCleaned || false,
+    separateThreshing: existingData.separateThreshing || false,
+    yieldEstimation: existingData.yieldEstimation || '',
+    notes: existingData.notes || current?.stages?.find(s => s.stageNumber === stageNumber)?.notes || '',
   })
 
   const handleChange = (e) => {

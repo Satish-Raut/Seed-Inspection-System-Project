@@ -14,19 +14,21 @@ export default function WheatStage2({ stageNumber = 2 }) {
   const { current, submitStage } = useInspection()
   const navigate = useNavigate()
 
+  const existingData = current?.stages?.find(s => s.stageNumber === stageNumber)?.formData || {}
+
   const [form, setForm] = useState({
-    morphologicalDeviationCount: '',
-    awnLengthVariation: '',
-    spikeDensityVariation: '',
-    floweringSynchrony: 85,
-    objectionableWeeds: false,
-    pollenShedding: '',
-    offTypesCount: '',
-    rustSymptoms: false,
-    smutSymptoms: false,
-    blightPresence: false,
-    infectionSeverity: 5,
-    notes: '',
+    morphologicalDeviationCount: existingData.morphologicalDeviationCount || '',
+    awnLengthVariation: existingData.awnLengthVariation || '',
+    spikeDensityVariation: existingData.spikeDensityVariation || '',
+    floweringSynchrony: existingData.floweringSynchrony || 85,
+    objectionableWeeds: existingData.objectionableWeeds || false,
+    pollenShedding: existingData.pollenShedding || '',
+    offTypesCount: existingData.offTypesCount || '',
+    rustSymptoms: existingData.rustSymptoms || false,
+    smutSymptoms: existingData.smutSymptoms || false,
+    blightPresence: existingData.blightPresence || false,
+    infectionSeverity: existingData.infectionSeverity || 5,
+    notes: existingData.notes || current?.stages?.find(s => s.stageNumber === stageNumber)?.notes || '',
   })
 
   const handleChange = (e) => {

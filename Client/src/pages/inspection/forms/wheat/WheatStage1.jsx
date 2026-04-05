@@ -15,34 +15,36 @@ export default function WheatStage1({ stageNumber = 1 }) {
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
 
+  const existingData = current?.stages?.find(s => s.stageNumber === stageNumber)?.formData || {}
+
   const [form, setForm] = useState({
     // Section A
-    tagNumber: '',
-    classOfSeed: '',
-    lotNumber: '',
-    producerName: '',
-    varietyName: '',
+    tagNumber: existingData.tagNumber || '',
+    classOfSeed: existingData.classOfSeed || '',
+    lotNumber: existingData.lotNumber || '',
+    producerName: existingData.producerName || '',
+    varietyName: existingData.varietyName || '',
     
     // Section B
-    appAcreage: '',
-    actualAcreage: '',
-    previousCrop: '',
-    season1History: '',
-    season2History: '',
-    volunteerPlants: false,
+    appAcreage: existingData.appAcreage || '',
+    actualAcreage: existingData.actualAcreage || '',
+    previousCrop: existingData.previousCrop || '',
+    season1History: existingData.season1History || '',
+    season2History: existingData.season2History || '',
+    volunteerPlants: existingData.volunteerPlants || false,
     
     // Section C
-    requiredIsolation: '300',
-    contaminatingCropPresent: false,
+    requiredIsolation: existingData.requiredIsolation || '300',
+    contaminatingCropPresent: existingData.contaminatingCropPresent || false,
     
     // Section D
-    heightUniformity: 75,
-    colorUniformity: 80,
-    growthStageUniformity: 70,
-    tilleringPattern: '',
-    aiOffTypePercent: '1.2',
-    roguingAdvised: false,
-    notes: '',
+    heightUniformity: existingData.heightUniformity || 75,
+    colorUniformity: existingData.colorUniformity || 80,
+    growthStageUniformity: existingData.growthStageUniformity || 70,
+    tilleringPattern: existingData.tilleringPattern || '',
+    aiOffTypePercent: existingData.aiOffTypePercent || '1.2',
+    roguingAdvised: existingData.roguingAdvised || false,
+    notes: existingData.notes || current?.stages?.find(s => s.stageNumber === stageNumber)?.notes || '',
   })
 
   const handleChange = (e) => {

@@ -5,7 +5,7 @@ import { jsPDF } from 'jspdf'
  * 
  * Generates a professional PDF report for seed inspections.
  */
-export const generateReport = (current, stagesData, inspector = {}) => {
+export const generateReport = async (current, stagesData, inspector = {}) => {
   const doc = new jsPDF()
   const margin = 20
   let y = 30
@@ -93,13 +93,59 @@ export const generateReport = (current, stagesData, inspector = {}) => {
      doc.setFont('helvetica', 'normal'); doc.text(String(item.value), xPos + 50, yPos)
   })
 
+  // 3.5 Field Evidence Image
+  if (fieldDetails.fieldImageUrl) {
+    try {
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'italic')
+      doc.setTextColor(100, 116, 139)
+      
+      // Bypass Canvas pollution natively with a raw Blob pipeline!
+      const response = await fetch(fieldDetails.fieldImageUrl)
+      const blob = await response.blob()
+      
+      const base64Data = await new Promise((resolve) => {
+         const reader = new FileReader()
+         reader.onloadend = () => resolve(reader.result)
+         reader.readAsDataURL(blob)
+      })
+
+      const localImg = new Image()
+      await new Promise((resolve) => {
+         localImg.onload = resolve
+         localImg.src = base64Data
+      })
+
+      // Divider
+      y += 20
+      doc.text('Attached Field Evidence:', margin, y)
+      
+      y += 5
+      
+      const imgWidth = 170
+      const imgHeight = (localImg.height * imgWidth) / localImg.width
+      
+      if (y + imgHeight > 270) {
+        doc.addPage()
+        y = 30
+      }
+      
+      doc.addImage(base64Data, 'JPEG', margin, y, imgWidth, imgHeight)
+      y += imgHeight + 10
+    } catch (e) {
+      console.warn("Failed to securely load or embed Certificate Field Image:", e)
+    }
+  }
+
   // 4. Inspection Stages Section
   y += 30
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(14)
   doc.text('Stage Inspection Summaries', margin, y)
   
-  current.stages.forEach((stage, index) => {
+  const safeStages = current.stages || stagesData || [];
+  
+  safeStages.forEach((stage, index) => {
     y += 15
     if (y > 250) {
       doc.addPage()
@@ -120,7 +166,7 @@ export const generateReport = (current, stagesData, inspector = {}) => {
     doc.setFont('helvetica', 'normal')
     
     // Dynamically list stage values (flattened)
-    const data = stage.data || {}
+    const data = stage.formData || stage.data || {}
     let flatItems = []
     
     const flatten = (obj, prefix = '') => {

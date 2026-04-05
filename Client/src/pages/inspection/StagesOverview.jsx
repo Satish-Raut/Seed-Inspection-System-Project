@@ -1,5 +1,6 @@
+import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronRight, CheckCircle2, Circle, ArrowLeft, Download } from 'lucide-react'
+import { ChevronRight, CheckCircle2, Circle, ArrowLeft, Download, Loader2 } from 'lucide-react'
 import AppLayout from '../../components/AppLayout'
 import { useAuth } from '../../hooks/useAuth'
 import { useInspection } from '../../hooks/useInspection'
@@ -7,10 +8,17 @@ import { STAGES } from '../../utils/constants'
 import { generateReport } from '../../utils/reportGenerator'
 
 export default function StagesOverview() {
-  const { crop: cropParam, type: typeParam } = useParams()
+  const { id, crop: cropParam, type: typeParam } = useParams()
   const { user } = useAuth()
-  const { current, isStageCompleted } = useInspection()
+  const { current, isStageCompleted, loadInspection, loading } = useInspection()
   const navigate = useNavigate()
+
+  // Rehydration logic: If the URL ID is a Real DB ID, and it doesn't match our context, load it!
+  useEffect(() => {
+    if (id && id !== 'DRAFT' && id !== 'NEW' && current.id !== parseInt(id)) {
+      loadInspection(id);
+    }
+  }, [id, current.id])
 
   const displayCrop = cropParam || current.cropType || 'Not Set'
   const displayType = typeParam || current.productionType || ''

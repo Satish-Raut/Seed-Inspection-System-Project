@@ -116,6 +116,13 @@ export const logoutInspector = () => api.post('/auth/logout')
 export const createInspection = (data) => api.post('/inspections', data)
 
 /**
+ * Update an existing inspection shell
+ * @param {number} id - The database ID
+ * @param {Object} data - { cropType, productionType, totalStages }
+ */
+export const updateInspection = (id, data) => api.put(`/inspections/${id}`, data)
+
+/**
  * Get all past inspections for the logged-in inspector
  * @returns {Promise} - Returns an array of inspection summary objects.
  */

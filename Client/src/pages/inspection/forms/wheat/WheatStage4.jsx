@@ -8,15 +8,16 @@ import { Slider, Toggle, NumberInput, FormActions } from '../../../../components
 export default function WheatStage4({ stageNumber = 4 }) {
   const { current, submitStage } = useInspection()
   const navigate = useNavigate()
+  const existingData = current?.stages?.find(s => s.stageNumber === stageNumber)?.formData || {}
 
   const [form, setForm] = useState({
-    seedUniformity: 90,
-    germinationEstimation: 92,
-    inertMatter: 0.5,
-    finalMoisture: 12.0,
-    purityCertified: true,
-    lotIntegrityChecked: true,
-    notes: '',
+    seedUniformity: existingData.seedUniformity || 90,
+    germinationEstimation: existingData.germinationEstimation || 92,
+    inertMatter: existingData.inertMatter || 0.5,
+    finalMoisture: existingData.finalMoisture || 12.0,
+    purityCertified: existingData.purityCertified !== undefined ? existingData.purityCertified : true,
+    lotIntegrityChecked: existingData.lotIntegrityChecked !== undefined ? existingData.lotIntegrityChecked : true,
+    notes: existingData.notes || current?.stages?.find(s => s.stageNumber === stageNumber)?.notes || '',
   })
 
   const handleChange = (e) => {

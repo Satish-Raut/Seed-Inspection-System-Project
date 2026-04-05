@@ -36,9 +36,9 @@ export const inspectors = mysqlTable('inspectors', {
 export const inspections = mysqlTable('inspections', {
   id:             int('id').autoincrement().primaryKey(),
   inspectorId:    int('inspector_id').references(() => inspectors.id, { onDelete: 'cascade' }),
-  cropType:       mysqlEnum('crop_type', ['Wheat', 'Rice', 'Maize', 'Sorghum', 'Sunflower']).notNull(),
-  productionType: mysqlEnum('production_type', ['Hybrid', 'Non-Hybrid']).notNull(),
-  totalStages:    int('total_stages').notNull(),
+  cropType:       mysqlEnum('crop_type', ['Wheat', 'Rice', 'Maize', 'Sorghum', 'Sunflower']),
+  productionType: mysqlEnum('production_type', ['Hybrid', 'Non-Hybrid']),
+  totalStages:    int('total_stages'),
   status:         mysqlEnum('status', ['In Progress', 'Completed', 'Rejected']).default('In Progress'),
   createdAt:      timestamp('created_at').defaultNow(),
   updatedAt:      timestamp('updated_at').onUpdateNow(),
