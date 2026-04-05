@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 import {
   Leaf, Shield, MapPin, FileText, Zap, CheckCircle2,
   ArrowRight, ChevronRight, Star, BarChart3,
   Microscope, Smartphone, Cloud, Users
 } from 'lucide-react'
 import Navbar from '../components/Navbar'
-import { CROP_TYPES } from '../utils/constants'
+import { CROP_TYPES, APP_NAME } from '../utils/constants'
 
 // ── Animation hook using IntersectionObserver ────────────────────────────────
 function useFadeIn() {
@@ -162,6 +163,7 @@ function ReportCard() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
+  const { user } = useAuth()
   const statsRef = useFadeIn()
   const featuresRef = useFadeIn()
   const howRef = useFadeIn()
@@ -217,7 +219,7 @@ export default function LandingPage() {
         <div className="absolute top-80 left-[20%] w-48 h-48 bg-green-400/20 rounded-full blur-[80px] animate-pulse delay-1000 pointer-events-none -z-10" />
 
         {/* Decorative Sketches in Hero Area */}
-        <div className="absolute top-63 left-[-30vw] md:left-[-15vw] lg:left-[-10vw] xl:left-[-5vw] 2xl:left-[0vw] z-0 pointer-events-none transform -rotate-3">
+        <div className="absolute top-63 left-[-30vw] md:left-[-15vw] lg:left-[-10vw] xl:left-[-5vw] 2xl:left-[0vw] z-0 pointer-events-none transform -rotate-3 hidden md:block">
           {/* Inspector on Left */}
           <img 
             src="/assets/images/inspector_drawing.png" 
@@ -226,7 +228,7 @@ export default function LandingPage() {
           />
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-center z-10 pt-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-center z-10 pt-4 md:pt-10">
           {/* Badge */}
           <div className="inline-flex items-center gap-3 px-3 py-1.5 rounded-full border border-border bg-white shadow-sm mb-8 animate-fade-up">
             <span className="text-primary text-[11px] font-extrabold tracking-widest pl-1 uppercase">v1.0</span>
@@ -235,24 +237,23 @@ export default function LandingPage() {
           </div>
 
           {/* Heading */}
-          <h1 className="text-5xl md:text-6xl lg:text-[72px] font-extrabold text-text-primary tracking-tight leading-[1.1] mb-6 animate-fade-up delay-100">
-            Next-Gen Seed Quality,<br />
-            built for Inspectors.
+          <h1 className="text-4xl md:text-6xl lg:text-[64px] font-extrabold text-text-primary tracking-tight leading-[1.1] mb-6 animate-fade-up delay-100 capitalize max-w-[90%] mx-auto">
+            Multi-stage agricultural field certification system.
           </h1>
 
           {/* Subtitle */}
-          <p className="text-text-secondary text-lg md:text-xl font-medium max-w-2xl mx-auto mb-10 animate-fade-up delay-200">
+          <p className="text-text-secondary text-base md:text-xl font-medium max-w-2xl mx-auto mb-10 animate-fade-up delay-200 px-2 lg:px-0">
             Engineered to eliminate paper trails using native digital workflows.
             <br className="hidden md:block" />
-            Includes multi-stage checklists and GPS-enabled field tracking.
+            {' '}Includes multi-stage checklists and GPS-enabled field tracking.
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up delay-300">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up delay-300 w-full px-4 sm:px-0">
             <Link
-              to="/register"
-              className="bg-black hover:bg-gray-800 text-white px-8 py-3.5 rounded-full font-bold
-                         flex items-center gap-2 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+              to={user ? "/dashboard" : "/login"}
+              className="w-full sm:w-auto bg-black hover:bg-gray-800 text-white px-8 py-4 rounded-full font-bold
+                         flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 text-base"
             >
               Start Inspecting <ArrowRight size={18} />
             </Link>
@@ -262,8 +263,8 @@ export default function LandingPage() {
                 e.preventDefault()
                 document.querySelector('#how-it-works')?.scrollIntoView({ behavior: 'smooth' })
               }}
-              className="bg-white hover:bg-gray-50 text-text-primary border border-border px-8 py-3.5 
-                         rounded-full font-semibold flex items-center gap-2 transition-colors shadow-sm"
+              className="w-full sm:w-auto bg-white hover:bg-gray-50 text-text-primary border border-border px-8 py-4 
+                         rounded-full font-bold flex items-center justify-center gap-2 transition-colors shadow-sm text-base"
             >
               <FileText size={18} className="text-text-muted" /> View workflow
             </a>
@@ -291,7 +292,7 @@ export default function LandingPage() {
                 <div className="w-3 h-3 rounded-full bg-green-400/80 border border-green-500/20" />
               </div>
               <div className="absolute left-1/2 -translate-x-1/2 bg-white border border-border rounded-lg px-20 py-1.5 text-[10px] text-text-muted font-semibold shadow-sm flex items-center gap-1.5">
-                🔒 seedinspect.app/dashboard
+                🔒 {APP_NAME.toLowerCase()}.app/dashboard
               </div>
               <div className="w-12" /> {/* Spacer */}
             </div>
@@ -486,7 +487,7 @@ export default function LandingPage() {
                 About the Invention
               </h2>
               <p className="text-text-secondary leading-relaxed mb-6">
-                SeedInspect Pro is a patent-pending digital platform developed by agriculture
+                {APP_NAME} is a patent-pending digital platform developed by agriculture
                 research students for field quality assurance of certified seeds. The system
                 digitizes the traditional paper-based inspection workflow that seed certification
                 authorities use across India.
@@ -544,7 +545,7 @@ export default function LandingPage() {
               <span className="gradient-text">Seed Inspection?</span>
             </h2>
             <p className="text-white/70 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-              Join field inspectors who are already using SeedInspect Pro for accurate,
+              Join field inspectors who are already using {APP_NAME} for accurate,
               paperless, GPS-tagged seed quality assessments.
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
@@ -582,7 +583,7 @@ export default function LandingPage() {
                   <Leaf size={18} className="text-white" />
                 </div>
                 <div>
-                  <span className="font-bold text-lg text-white">SeedInspect Pro</span>
+                  <span className="font-bold text-lg text-white">{APP_NAME}</span>
                   <span className="block text-[10px] text-emerald-400 tracking-widest uppercase">
                     Patent Pending
                   </span>
@@ -640,7 +641,7 @@ export default function LandingPage() {
           <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row
                           items-center justify-between gap-4">
             <p className="text-gray-500 text-sm">
-              © {new Date().getFullYear()} SeedInspect Pro · All rights reserved · Patent Pending
+              © {new Date().getFullYear()} {APP_NAME} · All rights reserved · Patent Pending
             </p>
             <p className="text-gray-600 text-xs">
               Built for Achyuttam Research · Seed Field Quality Assurance System

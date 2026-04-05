@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CheckCircle2, ArrowLeft } from 'lucide-react'
+import { CheckCircle2, ArrowLeft, Loader2 } from 'lucide-react'
 import AppLayout from '../../components/AppLayout'
 import { useInspection } from '../../hooks/useInspection'
 import { PRODUCTION_TYPES } from '../../utils/constants'
@@ -7,15 +8,17 @@ import { PRODUCTION_TYPES } from '../../utils/constants'
 export default function ProductionType() {
   const { current, setProductionType, syncInspectionToDatabase } = useInspection()
   const navigate = useNavigate()
+  const [isSaving, setIsSaving] = useState(false)
 
   const handleSelect = async (type) => {
+    if (isSaving) return;
+    
     // 1. Update Context State
     setProductionType(type.id, type.stages)
+    setIsSaving(true)
     
     try {
       // 2. We now have all the required data! Sync it to the backend Database.
-      // We pass overrides to ensure the backend gets the data exactly as clicked,
-      // bypassing any React state batching delays.
       const dbId = await syncInspectionToDatabase(type.id, type.stages)
 
       const crop = current.cropType || 'wheat'
@@ -26,11 +29,22 @@ export default function ProductionType() {
       const backendMessage = error.response?.data?.error || error.message;
       alert(`Failed to create inspection: ${backendMessage}`);
       console.error("Full Error Output: ", error.response || error);
+    } finally {
+      setIsSaving(false)
     }
   }
 
   return (
     <AppLayout title="Production Type" showBack>
+      {/* Full Page Loading Overlay Layer */}
+      {isSaving && (
+        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+          <Loader2 size={48} className="text-primary animate-spin mb-4" />
+          <h2 className="text-xl font-bold text-text-primary">Syncing to Database...</h2>
+          <p className="text-sm text-text-muted mt-2">Setting up your secure inspection workspace</p>
+        </div>
+      )}
+
       <p className="text-text-secondary text-sm mb-6">
         Select the seed production method to determine the number of inspection stages.
       </p>
@@ -43,12 +57,14 @@ export default function ProductionType() {
               key={type.id}
               id={`production-${type.id}`}
               onClick={() => handleSelect(type)}
+              disabled={isSaving}
               className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-200
                           active:scale-98 flex items-center gap-4
                           ${isSelected
                             ? 'border-primary bg-primary-lighter shadow-lg shadow-primary/15'
-                            : 'border-border bg-white hover:border-primary-mid hover:shadow-md'}`}
-            >
+                            : 'border-border bg-white hover:border-primary-mid hover:shadow-md'}
+                          ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
               <div className="text-3xl">{type.icon}</div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">

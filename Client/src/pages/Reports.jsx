@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { 
   CheckCircle2, XCircle, Clock, ChevronRight, 
   ArrowLeft, Download, Calendar, MapPin, 
-  Layers, User, Tag, Sparkles
+  Layers, User, Tag, Sparkles, Play
 } from 'lucide-react'
 import AppLayout from '../components/AppLayout'
 import { useAuth } from '../hooks/useAuth'
@@ -18,7 +19,8 @@ const statusConfig = {
 
 export default function Reports() {
   const { user } = useAuth()
-  const { inspections, fetchInspections } = useInspection()
+  const { inspections, fetchInspections, resumeInspection } = useInspection()
+  const navigate = useNavigate()
   const [selectedInspection, setSelectedInspection] = useState(null)
 
   useEffect(() => {
@@ -39,12 +41,24 @@ export default function Reports() {
     await generateReport(insp, insp.stages, user)
   }
 
+  const handleResume = (e, insp) => {
+    e.stopPropagation();
+    resumeInspection(insp);
+    const crop = insp.cropType || 'wheat';
+    const prod = insp.productionType || 'Hybrid';
+    const dest = insp.field || insp.fieldRegistration 
+                 ? `/inspection/${insp.id}/${crop}/${prod}/stages` 
+                 : `/inspection/${insp.id}/field`;
+    navigate(dest);
+  }
+
   if (selectedInspection) {
     return (
       <ReportDetailOverlay 
         inspection={selectedInspection} 
         onClose={() => setSelectedInspection(null)} 
         onDownload={(e) => handleDownload(e, selectedInspection)}
+        onResume={(e) => handleResume(e, selectedInspection)}
         formatDate={formatDate}
         getCropEmoji={getCropEmoji}
       />
@@ -136,7 +150,7 @@ function ReportCard({ inspection, onClick, formatDate, getCropEmoji }) {
   )
 }
 
-function ReportDetailOverlay({ inspection, onClose, onDownload, formatDate, getCropEmoji }) {
+function ReportDetailOverlay({ inspection, onClose, onDownload, onResume, formatDate, getCropEmoji }) {
   const sc = statusConfig[inspection.status] || statusConfig['In Progress']
 
   return (
@@ -213,7 +227,13 @@ function ReportDetailOverlay({ inspection, onClose, onDownload, formatDate, getC
 
         {/* Action Bar */}
         <div className="mt-12 flex flex-col sm:flex-row items-center gap-4">
-          <button onClick={onDownload} className="w-full sm:flex-1 bg-white border-2 border-primary text-primary font-black py-5 rounded-[1.5rem] flex items-center justify-center gap-3 hover:bg-primary/5 active:scale-95 transition-all shadow-md">
+          {inspection.status === 'In Progress' && (
+             <button onClick={onResume} className="w-full sm:flex-1 bg-primary text-white font-black py-5 rounded-[1.5rem] flex items-center justify-center gap-3 hover:bg-primary-mid active:scale-95 transition-all shadow-lg glow-button">
+                <Play fill="currentColor" size={20} />
+                Resume Active Inspection
+             </button>
+          )}
+          <button onClick={onDownload} className="w-full sm:flex-1 bg-white border-2 border-primary text-primary font-black py-5 rounded-[1.5rem] flex items-center justify-center gap-3 hover:bg-primary-lighter active:scale-95 transition-all shadow-md">
             <Download size={24} />
             Archive PDF Report
           </button>

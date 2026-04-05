@@ -78,6 +78,20 @@ export function InspectionProvider({ children }) {
     }
   }
 
+  // ── Restore Specific Inspection from Memory ─────────────────────
+  const resumeInspection = (insp) => {
+    setCurrent({
+      id: insp.id,
+      cropType: insp.cropType,
+      productionType: insp.productionType,
+      totalStages: insp.totalStages,
+      status: insp.status,
+      field: insp.field || insp.fieldRegistration || null,
+      stages: insp.stages || insp.stageData || [],
+      createdAt: insp.createdAt
+    })
+  }
+
   // ── 1. Start a New Draft (Now Real Database Shell) ──────────────
   const startNewInspection = async () => {
     try {
@@ -105,7 +119,7 @@ export function InspectionProvider({ children }) {
     setCurrent((prev) => ({ ...prev, productionType, totalStages }))
   const setFieldData = (field) => setCurrent((prev) => ({ ...prev, field }))
 
-  // ── Image Persistence Helper (Local Base64 for now) ─────────────
+  // ── Image Persistence Helpers (Local Base64 for now) ─────────────
   const persistFieldImage = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
@@ -115,6 +129,18 @@ export function InspectionProvider({ children }) {
           ...prev,
           field: { ...prev.field, fieldImage: base64, imageFileName: file.name }
         }))
+        resolve(base64)
+      }
+      reader.onerror = (err) => reject(err)
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const persistStagePhoto = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const base64 = reader.result
         resolve(base64)
       }
       reader.onerror = (err) => reject(err)
@@ -244,12 +270,14 @@ export function InspectionProvider({ children }) {
         loading,
         fetchInspections,
         loadInspection,
+        resumeInspection,
         startNewInspection,
         syncInspectionToDatabase,
         setCropType,
         setProductionType,
         setFieldData,
         persistFieldImage,
+        persistStagePhoto,
         submitStage,
         completeInspection,
         isStageCompleted,

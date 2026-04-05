@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Leaf, Settings, User, LogOut, LayoutDashboard } from 'lucide-react'
 import BottomNav from './BottomNav'
+import { APP_NAME } from '../utils/constants'
 import { useAuth } from '../hooks/useAuth'
 import { useInspection } from '../hooks/useInspection'
   
@@ -38,16 +39,21 @@ export default function AppLayout({
     return () => document.removeEventListener('click', handleClickOutside)
   }, [])
 
-  const handleInspectionNav = () => {
+  const handleInspectionNav = async () => {
     if (current.id) {
-       // If in progress, go to stages overview
        const crop = current.cropType || 'wheat'
-       const type = current.productionType || 'hybrid'
-       navigate(`/inspection/${current.id}/${crop}/${type}/stages`)
+       const type = current.productionType || 'Hybrid'
+       const dest = current.field || current.fieldRegistration 
+                 ? `/inspection/${current.id}/${crop}/${type}/stages` 
+                 : `/inspection/${current.id}/field`;
+       navigate(dest)
     } else {
-       // Start new session
-       const newInsp = startNewInspection()
-       navigate(`/inspection/${newInsp.id}/crop`)
+       try {
+         const newInspId = await startNewInspection()
+         navigate(`/inspection/${newInspId}/field`)
+       } catch (e) {
+         alert("Could not initialize database session.")
+       }
     }
   }
 
@@ -73,7 +79,7 @@ export default function AppLayout({
               <div className="w-9 h-9 bg-primary text-white rounded-xl flex items-center justify-center shadow-md">
                 <Leaf size={18} fill="currentColor" />
               </div>
-              <span className="font-black text-lg text-text-primary tracking-tight">SeedInspect Pro</span>
+              <span className="font-black text-lg text-text-primary tracking-tight">{APP_NAME}</span>
             </button>
             <nav className="flex items-center gap-1">
               <button

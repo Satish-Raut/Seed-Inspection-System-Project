@@ -11,13 +11,16 @@ import {
 } from '../../../../components/FormComponents'
 
 export default function WheatStage1({ stageNumber = 1 }) {
-  const { current, submitStage } = useInspection()
+  const { current, submitStage, persistStagePhoto } = useInspection()
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
 
   const existingData = current?.stages?.find(s => s.stageNumber === stageNumber)?.formData || {}
 
   const [form, setForm] = useState({
+    // Image
+    tagImage: existingData.tagImage || null,
+    
     // Section A
     tagNumber: existingData.tagNumber || '',
     classOfSeed: existingData.classOfSeed || '',
@@ -47,9 +50,26 @@ export default function WheatStage1({ stageNumber = 1 }) {
     notes: existingData.notes || current?.stages?.find(s => s.stageNumber === stageNumber)?.notes || '',
   })
 
+  const [imgProcessing, setImgProcessing] = useState(false)
+
   const handleChange = (e) => {
     const { name, type, value, checked } = e.target
     setForm((p) => ({ ...p, [name]: type === 'checkbox' ? checked : value }))
+  }
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setImgProcessing(true)
+      try {
+        const base64 = await persistStagePhoto(file)
+        setForm((p) => ({ ...p, tagImage: base64 }))
+      } catch (err) {
+        console.error('Photo capture failed', err)
+      } finally {
+        setImgProcessing(false)
+      }
+    }
   }
 
   const handleSubmit = (e) => {
@@ -75,19 +95,34 @@ export default function WheatStage1({ stageNumber = 1 }) {
                 <SectionHeader title="A. Seed Source Verification" />
                 
                 {/* Image Actions */}
-                <div className="grid grid-cols-2 gap-4">
-                  <button type="button" onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center justify-center gap-3 px-4 py-4 rounded-xl border border-border hover:bg-gray-50 hover:border-primary transition-all font-bold text-text-primary text-sm group">
-                    <FileUp size={18} className="text-text-secondary group-hover:text-primary" />
-                    Upload Seed Tag
-                  </button>
-                  <button type="button"
-                    className="flex items-center justify-center gap-3 px-4 py-4 rounded-xl border border-border hover:bg-gray-50 hover:border-primary transition-all font-bold text-text-primary text-sm group">
-                    <Camera size={18} className="text-text-secondary group-hover:text-primary" />
-                    Capture Photo
-                  </button>
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <button type="button" onClick={() => fileInputRef.current?.click()}
+                      disabled={imgProcessing}
+                      className="flex items-center justify-center gap-3 px-4 py-4 rounded-xl border border-border hover:bg-gray-50 hover:border-primary transition-all font-bold text-text-primary text-sm group disabled:opacity-50">
+                      <FileUp size={18} className="text-text-secondary group-hover:text-primary" />
+                      {imgProcessing ? 'Processing...' : 'Upload Seed Tag'}
+                    </button>
+                    <button type="button" onClick={() => fileInputRef.current?.click()}
+                      disabled={imgProcessing}
+                      className="flex items-center justify-center gap-3 px-4 py-4 rounded-xl border border-border hover:bg-gray-50 hover:border-primary transition-all font-bold text-text-primary text-sm group disabled:opacity-50">
+                      <Camera size={18} className="text-text-secondary group-hover:text-primary" />
+                      Capture Photo
+                    </button>
+                  </div>
+                  
+                  {form.tagImage && (
+                    <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-border group">
+                      <img src={form.tagImage} alt="Seed Tag" className="w-full h-full object-cover" />
+                      <button type="button" onClick={() => setForm(p => ({ ...p, tagImage: null }))}
+                        className="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Sparkles size={14} /> {/* X icon replacement if lucide isn't here, but let's use check for now or just generic */}
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <input type="file" ref={fileInputRef} className="hidden" />
+                
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
 
                 {/* Info Fields */}
                 <div className="grid grid-cols-2 gap-4">

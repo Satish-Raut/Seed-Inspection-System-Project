@@ -1,9 +1,10 @@
 {
-  "name": "server",
+  "name": "agriinspect-server",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "db:generate": "drizzle-kit generate --config=src/drizzle.config.js",
     "db:migrate": "drizzle-kit migrate --config=src/drizzle.config.js",

@@ -22,6 +22,7 @@ export default function Dashboard() {
     startNewInspection, 
     inspections, 
     fetchInspections, 
+    resumeInspection,
     loading, 
     current 
   } = useInspection()
@@ -45,6 +46,18 @@ export default function Dashboard() {
     } catch(err) {
       alert("Failed to initialize a new inspection session. Check connection.");
     }
+  }
+
+  const handleResume = (insp) => {
+    resumeInspection(insp);
+    const crop = insp.cropType || 'wheat';
+    const prod = insp.productionType || 'Hybrid';
+    // If field registration is completely unstarted, we could bounce them to /field, 
+    // but the system naturally creates the row inside Stages.
+    const dest = insp.field || insp.fieldRegistration 
+                 ? `/inspection/${insp.id}/${crop}/${prod}/stages` 
+                 : `/inspection/${insp.id}/field`;
+    navigate(dest);
   }
 
   const recentInspections = safeInspections.slice(0, 3)
@@ -98,12 +111,14 @@ export default function Dashboard() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
                 {recentInspections.map((insp) => (
-                  <div key={insp.id}
-                    className="bg-white rounded-2xl p-5 border border-border
-                               flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+                  <div
+                    key={insp.id}
+                    onClick={() => handleResume(insp)}
+                    className="bg-white rounded-[1.5rem] p-5 border border-border flex items-center justify-between transition-all cursor-pointer hover:border-primary-mid hover:shadow-md group active:scale-[0.98]"
+                  >
                     <div>
                       <div className="font-bold text-text-primary text-base capitalize">{insp.cropType}</div>
-                      <div className="text-text-muted text-xs capitalize font-medium">{insp.productionType} • {new Date(insp.date).toLocaleDateString()}</div>
+                      <div className="text-text-muted text-xs capitalize font-medium">{insp.productionType} • {new Date(insp.createdAt).toLocaleDateString()}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${insp.status === 'Completed' ? 'bg-success-bg text-success' :
@@ -147,10 +162,13 @@ export default function Dashboard() {
                 Start New Inspection
               </button>
 
-              {pending > 0 && current.id && (
+              {pending > 0 && (
                 <button
                   id="btn-resume-inspection"
-                  onClick={() => navigate(`/inspection/${current.id}/${current.cropType || 'wheat'}/${current.productionType || 'hybrid'}/stages`)}
+                  onClick={() => {
+                     const mostRecentPending = safeInspections.find(i => i.status === 'In Progress');
+                     if (mostRecentPending) handleResume(mostRecentPending);
+                  }}
                   className="w-full bg-white border-2 border-primary text-primary font-bold py-4 rounded-2xl
                              flex items-center justify-center gap-2
                              hover:bg-primary-lighter active:scale-95 transition-all text-sm"

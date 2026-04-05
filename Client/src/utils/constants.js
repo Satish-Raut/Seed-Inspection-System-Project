@@ -1,3 +1,5 @@
+export const APP_NAME = import.meta.env.VITE_APP_NAME || 'AgriInspect'
+
 // ─── Crop Types ───────────────────────────────────────────────────────────────
 export const CROP_TYPES = [
   { id: 'wheat',     label: 'Wheat',     emoji: '🌾', color: '#F59E0B', bg: '#FFFBEB' },

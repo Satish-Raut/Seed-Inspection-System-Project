@@ -1,5 +1,6 @@
 import { stageDataSchema } from '../validations/inspection.validation.js';
 import { getInspectionWithDetails, insertStageDataDb, updateStageDataDb } from '../models/inspection.model.js';
+import cloudinary from '../config/cloudinary.js';
 
 /**
  * 🧠 SUBMIT STAGE DATA
@@ -20,7 +21,31 @@ export const submitStageData = async (req, res) => {
     // 2. Validate dynamic stage form
     const validatedData = stageDataSchema.parse(req.body);
 
-    // 3. Insert into DB
+    // ── 3. CLOUDINARY IMAGE PROCESSOR ──────────────────────────────────
+    // If formData contains a base64 image (specifically tagImage or stageImage)
+    const fd = validatedData.formData || {};
+    
+    // Look for image-like keys (this handles our Seed Tag or Stage evidence)
+    const imageKeys = ['tagImage', 'stageImage', 'evidenceImage'];
+    
+    for (const key of imageKeys) {
+      if (fd[key] && fd[key].startsWith('data:image')) {
+        try {
+          const uploadRes = await cloudinary.uploader.upload(fd[key], {
+            folder: `seed_inspections/stages/stage_${validatedData.stageNumber}`
+          });
+          fd[key] = uploadRes.secure_url; // Replace Base64 with CDN URL
+        } catch (err) {
+          console.error(`Cloudinary Stage Image Upload [${key}] Failed:`, err);
+          // We can choose to fail the request or continue with Base64 (failing is safer for DB size)
+          return res.status(500).json({ error: 'Failed to upload stage image to Cloudinary' });
+        }
+      }
+    }
+    
+    validatedData.formData = fd;
+
+    // 4. Insert into DB
     const stageDataId = await insertStageDataDb(inspectionId, validatedData);
 
     res.status(201).json({ 

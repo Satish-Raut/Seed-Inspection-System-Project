@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf'
+import { APP_NAME } from './constants'
 
 /**
  * reportGenerator.js
@@ -17,7 +18,7 @@ export const generateReport = async (current, stagesData, inspector = {}) => {
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(24)
   doc.setFont('helvetica', 'bold')
-  doc.text('SeedInspect Pro', margin, 25)
+  doc.text(APP_NAME, margin, 25)
   
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
@@ -145,7 +146,7 @@ export const generateReport = async (current, stagesData, inspector = {}) => {
   
   const safeStages = current.stages || stagesData || [];
   
-  safeStages.forEach((stage, index) => {
+  for (const [index, stage] of safeStages.entries()) {
     y += 15
     if (y > 250) {
       doc.addPage()
@@ -168,11 +169,19 @@ export const generateReport = async (current, stagesData, inspector = {}) => {
     // Dynamically list stage values (flattened)
     const data = stage.formData || stage.data || {}
     let flatItems = []
+    let stagePhotos = []
     
     const flatten = (obj, prefix = '') => {
       Object.entries(obj).forEach(([key, val]) => {
         if (val === null || val === undefined) return
         
+        // Identify images to render separately
+        const imageKeys = ['tagImage', 'stageImage', 'evidenceImage', 'fieldImageUrl']
+        if (imageKeys.includes(key) && (typeof val === 'string' && (val.startsWith('http') || val.startsWith('data:image')))) {
+          stagePhotos.push({ key, url: val })
+          return
+        }
+
         if (typeof val === 'object' && !Array.isArray(val)) {
           flatten(val, prefix + key + ' ')
         } else {
@@ -185,7 +194,7 @@ export const generateReport = async (current, stagesData, inspector = {}) => {
     }
     flatten(data)
     
-    if (flatItems.length === 0) {
+    if (flatItems.length === 0 && stagePhotos.length === 0) {
        doc.setFont('helvetica', 'italic')
        doc.text('No detailed data recorded for this stage.', margin + 10, y)
        y += 10
@@ -210,6 +219,30 @@ export const generateReport = async (current, stagesData, inspector = {}) => {
          doc.text(textValue, margin + 85, y) // Increased offset to 85 for clearer separation
          y += 8
       })
+
+      // Render Stage Images
+      for (const photo of stagePhotos) {
+        if (y > 220) {
+          doc.addPage()
+          y = 30
+        }
+        y += 5
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(10)
+        doc.text(`${photo.key === 'tagImage' ? 'Seed Tag Evidence' : 'Stage Evidence'}:`, margin + 10, y)
+        y += 5
+        try {
+          const imgBase64 = await getBase64Image(photo.url)
+          doc.addImage(imgBase64, 'JPEG', margin + 10, y, 60, 45) // Smaller stage photos
+          y += 50
+        } catch (err) {
+          doc.setFont('helvetica', 'italic')
+          doc.setTextColor(200, 0, 0)
+          doc.text(`[Image attachment failed to load]`, margin + 10, y + 5)
+          doc.setTextColor(0, 0, 0)
+          y += 10
+        }
+      }
     }
     
     if (data.notes) {
@@ -218,7 +251,9 @@ export const generateReport = async (current, stagesData, inspector = {}) => {
        doc.text(data.notes, margin + 25, y, { maxWidth: 150 })
        y += Math.ceil(data.notes.length / 80) * 8
     }
-  })
+    
+    y += 15
+  }
 
   // 5. Final Verdict (if applicable)
   if (current.verdict) {
@@ -251,10 +286,10 @@ export const generateReport = async (current, stagesData, inspector = {}) => {
     doc.setPage(i)
     doc.setFontSize(8)
     doc.setTextColor(150, 150, 150)
-    doc.text(`Page ${i} of ${pageCount} | SeedInspect Pro - Verification System`, 105, 290, { align: 'center' })
+    doc.text(`Page ${i} of ${pageCount} | ${APP_NAME} - Verification System`, 105, 290, { align: 'center' })
   }
 
   // Save
-  const fileName = `SeedInspect-Report-${current.cropType || 'Crop'}-${new Date().getTime()}.pdf`
+  const fileName = `${APP_NAME}-Report-${current.cropType || 'Crop'}-${new Date().getTime()}.pdf`
   doc.save(fileName)
 }

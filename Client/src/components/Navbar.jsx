@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { Menu, X, Leaf, User, LogOut, LayoutDashboard } from 'lucide-react'
+import { APP_NAME } from '../utils/constants'
 
 const navLinks = [
   { label: 'Home',        href: '#home' },
@@ -77,14 +78,8 @@ export default function Navbar() {
               </div>
               <div className="text-left">
                 <span className="block font-black text-xl text-text-primary leading-none tracking-tight">
-                  SeedInspect
+                  {APP_NAME}
                 </span>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <div className="h-[2px] w-4 bg-primary-mid rounded-full" />
-                  <span className="block text-[10px] font-black tracking-[0.2em] uppercase text-primary-mid">
-                    PRO
-                  </span>
-                </div>
               </div>
             </button>
 
@@ -214,7 +209,7 @@ export default function Navbar() {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
               <Leaf size={16} />
             </div>
-            <span className="font-extrabold text-text-primary">SeedInspect Pro</span>
+            <span className="font-extrabold text-text-primary">{APP_NAME}</span>
           </div>
           <button
             onClick={() => setMenuOpen(false)}

@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { User, Mail, Phone, MapPin, Award, LogOut, ChevronRight, Shield } from 'lucide-react'
 import AppLayout from '../components/AppLayout'
 import { useAuth } from '../hooks/useAuth'
+import { APP_NAME } from '../utils/constants'
 
 function InfoRow({ icon: Icon, label, value }) {
   return (
@@ -77,7 +78,7 @@ export default function Settings() {
 
       {/* App version */}
       <div className="bg-primary-lighter rounded-2xl p-4 border border-primary-light mb-4 text-center">
-        <p className="text-primary text-xs font-semibold">SeedInspect Pro · v1.0.0</p>
+        <p className="text-primary text-xs font-semibold">{APP_NAME} · v1.0.0</p>
         <p className="text-primary/70 text-[11px] mt-0.5">Patent Pending · Achyuttam Research</p>
       </div>
 
