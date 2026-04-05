@@ -20,12 +20,12 @@ export default function Dashboard() {
   console.log("Details at Dashboard: ", user)
 
   const { startNewInspection, getInspectorInspections } = useInspection()
-  const navigate                            = useNavigate()
+  const navigate = useNavigate()
 
   const inspections = getInspectorInspections(user?.id)
-  const pending     = inspections.filter((i) => i.status === 'In Progress').length
-  const completed   = inspections.filter((i) => i.status === 'Completed').length
-  const rejected    = inspections.filter((i) => i.status === 'Rejected').length
+  const pending = inspections.filter((i) => i.status === 'In Progress').length
+  const completed = inspections.filter((i) => i.status === 'Completed').length
+  const rejected = inspections.filter((i) => i.status === 'Rejected').length
 
   const handleStartNew = () => {
     const newInsp = startNewInspection()
@@ -42,9 +42,9 @@ export default function Dashboard() {
   }
 
   return (
-    <AppLayout title="Inspection Dashboard" showSettings>
+    <AppLayout title="Inspection Dashboard" showSettings showBack backUrl="/">
       <div className="flex flex-col lg:flex-row gap-8">
-        
+
         {/* ── Main Content Column ── */}
         <div className="flex-1">
           {/* Greeting */}
@@ -64,9 +64,9 @@ export default function Dashboard() {
               Today's Overview
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <StatCard icon={Clock}         count={pending}   label="Pending"   color="#F59E0B" bg="#FFFBEB" />
-              <StatCard icon={CheckCircle2}  count={completed} label="Completed" color="#10B981" bg="#ECFDF5" />
-              <StatCard icon={XCircle}       count={rejected}  label="Rejected"  color="#EF4444" bg="#FEF2F2" />
+              <StatCard icon={Clock} count={pending} label="Pending" color="#F59E0B" bg="#FFFBEB" />
+              <StatCard icon={CheckCircle2} count={completed} label="Completed" color="#10B981" bg="#ECFDF5" />
+              <StatCard icon={XCircle} count={rejected} label="Rejected" color="#EF4444" bg="#FEF2F2" />
             </div>
           </div>
 
@@ -91,11 +91,10 @@ export default function Dashboard() {
                       <div className="text-text-muted text-xs capitalize font-medium">{insp.productionType} • {new Date(insp.date).toLocaleDateString()}</div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${
-                        insp.status === 'Completed' ? 'bg-success-bg text-success' :
-                        insp.status === 'Rejected'  ? 'bg-danger-bg text-danger' :
-                        'bg-warning-bg text-warning'
-                      }`}>
+                      <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${insp.status === 'Completed' ? 'bg-success-bg text-success' :
+                          insp.status === 'Rejected' ? 'bg-danger-bg text-danger' :
+                            'bg-warning-bg text-warning'
+                        }`}>
                         {insp.status}
                       </span>
                     </div>
@@ -161,10 +160,10 @@ export default function Dashboard() {
 
           {/* Help box */}
           <div className="bg-primary-lighter p-6 rounded-3xl border border-primary-light">
-             <h4 className="text-primary font-bold text-sm mb-1">Need help?</h4>
-             <p className="text-primary/70 text-xs leading-relaxed">
-               Access the training manual or contact support for field assistance.
-             </p>
+            <h4 className="text-primary font-bold text-sm mb-1">Need help?</h4>
+            <p className="text-primary/70 text-xs leading-relaxed">
+              Access the training manual or contact support for field assistance.
+            </p>
           </div>
         </div>
       </div>

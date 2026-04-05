@@ -1,96 +1,93 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useState, useEffect } from 'react'
+import * as api from '../services/api'
 
 const AuthContext = createContext(null)
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-const getStoredUser  = () => JSON.parse(localStorage.getItem('si_user') || 'null')
-const setStoredUser  = (user) => localStorage.setItem('si_user', JSON.stringify(user))
-const clearStoredUser = () => localStorage.removeItem('si_user')
-
-const getInspectors  = () => JSON.parse(localStorage.getItem('si_inspectors') || '[]')
-const setInspectors  = (list) => localStorage.setItem('si_inspectors', JSON.stringify(list))
-
-// Auto-generate Inspector ID: INS-2026-001
-const generateInspectorId = () => {
-  const year = new Date().getFullYear()
-  const inspectors = getInspectors()
-  const count = String(inspectors.length + 1).padStart(3, '0')
-  return `INS-${year}-${count}`
-}
-
-// ── Provider ──────────────────────────────────────────────────────────────────
+/**
+ * 🔐 AUTH PROVIDER
+ * This is the SINGLE source of truth for the user's authentication state.
+ */
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(getStoredUser)
-  const [loading, setLoading] = useState(false)
+  const [user, setUser]       = useState(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
 
   const clearError = () => setError(null)
 
-  // ── Register ──────────────────────────────────────────────────────────────
+  /**
+   * 🔄 REHYDRATION (App Load)
+   * On mount, we check if an active session exists by calling /auth/me.
+   */
+  useEffect(() => {
+    const rehydrate = async () => {
+      // 🕵️ Check if we are already on a public auth page to avoid unnecessary calls
+      const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register'
+      
+      const hasToken = localStorage.getItem('si_user')
+
+      // Optimization: If no token and already on login page, don't even try the API
+      if (!hasToken && isAuthPage) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const { data } = await api.getMe()
+        setUser(data)
+      } catch (err) {
+        // Silent fail is okay, it just means the session is dead
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    rehydrate()
+  }, [])
+
   const register = async (formData) => {
     setLoading(true)
     setError(null)
     try {
-      await new Promise((r) => setTimeout(r, 800)) // simulate network delay
-
-      const inspectors = getInspectors()
-      const exists = inspectors.find((i) => i.email === formData.email)
-      if (exists) throw new Error('An account with this email already exists.')
-
-      const newInspector = {
-        id:           Date.now(),
-        inspectorId:  generateInspectorId(),
-        name:         formData.name,
-        email:        formData.email,
-        password:     formData.password, // NOTE: plain text for now (backend will hash)
-        phone:        formData.phone || '',
-        designation:  formData.designation || 'Field Inspector',
-        region:       formData.region || '',
-        role:         'inspector',
-        createdAt:    new Date().toISOString(),
-      }
-
-      setInspectors([...inspectors, newInspector])
-
-      const { password: _, ...safeUser } = newInspector
-      setStoredUser(safeUser)
-      setUser(safeUser)
+      const { data } = await api.registerInspector(formData)
+      console.log("Data after Registration: ", data);
+      localStorage.setItem('si_user', JSON.stringify({ accessToken: data.accessToken }))
+      setUser(data.user)
       return { success: true }
     } catch (err) {
-      setError(err.message)
-      return { success: false, error: err.message }
+      const msg = err.response?.data?.error || 'Registration failed'
+      setError(msg)
+      return { success: false, error: msg }
     } finally {
       setLoading(false)
     }
   }
 
-  // ── Login ─────────────────────────────────────────────────────────────────
   const login = async ({ email, password }) => {
     setLoading(true)
     setError(null)
     try {
-      await new Promise((r) => setTimeout(r, 800))
-
-      const inspectors = getInspectors()
-      const found = inspectors.find((i) => i.email === email && i.password === password)
-      if (!found) throw new Error('Invalid email or password.')
-
-      const { password: _, ...safeUser } = found
-      setStoredUser(safeUser)
-      setUser(safeUser)
+      const { data } = await api.loginInspector({ email, password })
+      localStorage.setItem('si_user', JSON.stringify({ accessToken: data.accessToken }))
+      setUser(data.user)
       return { success: true }
     } catch (err) {
-      setError(err.message)
-      return { success: false, error: err.message }
+      const msg = err.response?.data?.error || 'Invalid credentials'
+      setError(msg)
+      return { success: false, error: msg }
     } finally {
       setLoading(false)
     }
   }
 
-  // ── Logout ────────────────────────────────────────────────────────────────
-  const logout = () => {
-    clearStoredUser()
-    setUser(null)
+  const logout = async () => {
+    try {
+      await api.logoutInspector()
+    } catch (err) {
+      console.error('Logout error:', err)
+    } finally {
+      localStorage.removeItem('si_user')
+      setUser(null)
+    }
   }
 
   return (

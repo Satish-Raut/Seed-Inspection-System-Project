@@ -1,9 +1,10 @@
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Leaf, Settings } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { ArrowLeft, Leaf, Settings, User, LogOut, LayoutDashboard } from 'lucide-react'
 import BottomNav from './BottomNav'
 import { useAuth } from '../hooks/useAuth'
 import { useInspection } from '../hooks/useInspection'
-
+  
 /**
  * AppLayout — shell for all app pages (after login)
  * Props:
@@ -16,13 +17,26 @@ import { useInspection } from '../hooks/useInspection'
 export default function AppLayout({
   title,
   showBack = false,
+  backUrl,
   showSettings = false,
   noPadding = false,
   children,
 }) {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { current, startNewInspection } = useInspection()
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+
+  // Close dropdown if click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('#applayout-user-dropdown')) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [])
 
   const handleInspectionNav = () => {
     if (current.id) {
@@ -48,7 +62,7 @@ export default function AppLayout({
           <div className="flex items-center gap-6">
             {showBack && (
               <button 
-                onClick={() => navigate(-1)}
+                onClick={() => backUrl ? navigate(backUrl) : navigate(-1)}
                 className="p-2.5 -ml-4 rounded-xl text-text-secondary hover:bg-gray-100 hover:text-primary transition-all flex items-center justify-center group"
                 title="Go Back"
               >
@@ -92,8 +106,53 @@ export default function AppLayout({
              <button onClick={() => navigate('/settings')} className="p-2 rounded-xl text-text-secondary hover:bg-gray-100 transition-all">
                 <Settings size={20} />
              </button>
-             <div className="w-10 h-10 rounded-full bg-primary-lighter border border-primary-light flex items-center justify-center text-primary font-bold">
-                {user?.name?.charAt(0)}
+             <div className="relative" id="applayout-user-dropdown">
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold uppercase shadow-sm transition-colors cursor-pointer ${
+                    dropdownOpen ? 'bg-primary border-primary text-white' : 'bg-primary-lighter border border-primary-light text-primary hover:bg-primary/20'
+                  }`}
+                  title="Profile Menu"
+                >
+                  {user?.name ? user.name.charAt(0) : 'U'}
+                </button>
+                
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-3 w-56 bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-100 py-2 z-50 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100 mb-2">
+                      <p className="text-sm font-bold text-text-primary truncate">{user?.name}</p>
+                      <p className="text-xs text-text-muted truncate">{user?.email}</p>
+                    </div>
+                    
+                    <Link
+                      to="/profile"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-sm font-semibold text-text-secondary hover:text-primary hover:bg-primary-lighter transition-colors"
+                    >
+                      <User size={16} /> My Profile
+                    </Link>
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-sm font-semibold text-text-secondary hover:text-primary hover:bg-primary-lighter transition-colors"
+                    >
+                      <LayoutDashboard size={16} /> Dashboard
+                    </Link>
+                    
+                    <div className="h-px bg-gray-100 my-2"></div>
+                    
+                    <button
+                      onClick={async () => {
+                        setDropdownOpen(false)
+                        await logout()
+                        navigate('/login')
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-danger hover:bg-danger-bg transition-colors"
+                    >
+                      <LogOut size={16} /> Logout
+                    </button>
+                  </div>
+                )}
              </div>
           </div>
         </header>
@@ -105,7 +164,7 @@ export default function AppLayout({
           <div className="w-9">
             {showBack ? (
               <button
-                onClick={() => navigate(-1)}
+                onClick={() => backUrl ? navigate(backUrl) : navigate(-1)}
                 className="p-1.5 rounded-lg text-white/80 hover:text-white
                            hover:bg-white/10 transition-all"
               >

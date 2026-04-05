@@ -35,6 +35,7 @@ export const register = async (req, res) => {
   try {
     // 1. Validate Input (Using Validation Layer)
     const validatedData = registerSchema.parse(req.body);
+    console.log("Data from Frontend for registration: ", req.body)
 
     // 2. Check if user already exists (Using Model Layer)
     const existingUser = await findUserByEmail(validatedData.email);

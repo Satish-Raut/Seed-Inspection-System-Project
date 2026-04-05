@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { Menu, X, Leaf } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
+import { Menu, X, Leaf, User, LogOut, LayoutDashboard } from 'lucide-react'
 
 const navLinks = [
   { label: 'Home',        href: '#home' },
@@ -11,8 +12,11 @@ const navLinks = [
 ]
 
 export default function Navbar() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [scrolled, setScrolled]   = useState(false)
   const [menuOpen, setMenuOpen]   = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
   const [activeLink, setActiveLink] = useState('#home')
 
   useEffect(() => {
@@ -31,6 +35,17 @@ export default function Navbar() {
     document.body.style.overflow = menuOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
+
+  // Close dropdown if click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('#user-dropdown-container')) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [])
 
   const handleNavClick = (href) => {
     setActiveLink(href)
@@ -95,21 +110,74 @@ export default function Navbar() {
 
             {/* ── Desktop CTA ── */}
             <div className="hidden md:flex items-center bg-white/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/40 shadow-sm gap-1">
-              <Link
-                to="/login"
-                className="px-5 py-2 text-sm font-bold text-text-secondary hover:text-text-primary hover:bg-white/50 rounded-xl transition-all"
-              >
-                Log In
-              </Link>
-              <Link
-                to="/register"
-                className="px-6 py-2.5 text-sm font-black rounded-xl bg-text-primary text-white
-                           hover:bg-black hover:shadow-[0_8px_20px_-5px_rgba(0,0,0,0.3)]
-                           active:scale-95 transition-all duration-300
-                           flex items-center gap-2"
-              >
-                Sign Up Free
-              </Link>
+              {user ? (
+                <div className="relative" id="user-dropdown-container">
+                  <button
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className={`w-10 h-10 flex items-center justify-center rounded-xl font-extrabold text-lg uppercase shadow-md transition-colors cursor-pointer ${
+                      dropdownOpen ? 'bg-primary-mid text-white' : 'bg-primary text-white hover:bg-primary-mid'
+                    }`}
+                    title="Profile Menu"
+                  >
+                    {user.name ? user.name.charAt(0) : 'U'}
+                  </button>
+                  
+                  {dropdownOpen && (
+                    <div className="absolute right-0 mt-3 w-56 bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/40 py-2 z-50 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-gray-100 mb-2">
+                        <p className="text-sm font-bold text-text-primary truncate">{user.name}</p>
+                        <p className="text-xs text-text-muted truncate">{user.email}</p>
+                      </div>
+                      
+                      <Link
+                        to="/profile"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-sm font-semibold text-text-secondary hover:text-primary hover:bg-primary-lighter transition-colors"
+                      >
+                        <User size={16} /> My Profile
+                      </Link>
+                      <Link
+                        to="/dashboard"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-sm font-semibold text-text-secondary hover:text-primary hover:bg-primary-lighter transition-colors"
+                      >
+                        <LayoutDashboard size={16} /> Dashboard
+                      </Link>
+                      
+                      <div className="h-px bg-gray-100 my-2"></div>
+                      
+                      <button
+                        onClick={async () => {
+                          setDropdownOpen(false)
+                          await logout()
+                          navigate('/login')
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-danger hover:bg-danger-bg transition-colors"
+                      >
+                        <LogOut size={16} /> Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="px-5 py-2 text-sm font-bold text-text-secondary hover:text-text-primary hover:bg-white/50 rounded-xl transition-all"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="px-6 py-2.5 text-sm font-black rounded-xl bg-text-primary text-white
+                               hover:bg-black hover:shadow-[0_8px_20px_-5px_rgba(0,0,0,0.3)]
+                               active:scale-95 transition-all duration-300
+                               flex items-center gap-2"
+                  >
+                    Sign Up Free
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* ── Mobile Hamburger ── */}
@@ -173,20 +241,55 @@ export default function Navbar() {
         </div>
 
         <div className="px-4 pb-8 flex flex-col gap-3">
-          <Link
-            to="/login"
-            onClick={() => setMenuOpen(false)}
-            className="w-full py-3 text-center text-sm font-bold rounded-xl border-2 border-border text-text-primary hover:bg-gray-50 transition-colors"
-          >
-            Log In
-          </Link>
-          <Link
-            to="/register"
-            onClick={() => setMenuOpen(false)}
-            className="w-full py-3 text-center text-sm font-bold rounded-xl bg-text-primary text-white hover:bg-black transition-colors"
-          >
-            Sign Up Free
-          </Link>
+          {user ? (
+            <>
+              <div className="px-2 py-2 mb-2">
+                <p className="text-sm font-bold text-text-primary text-center truncate">{user.name}</p>
+                <p className="text-xs text-text-muted text-center truncate">{user.email}</p>
+              </div>
+              <Link
+                to="/profile"
+                onClick={() => setMenuOpen(false)}
+                className="w-full flex items-center justify-center gap-3 py-3 text-center text-sm font-bold rounded-xl border border-border text-text-primary hover:bg-gray-50 transition-colors"
+              >
+                <User size={18} /> My Profile
+              </Link>
+              <Link
+                to="/dashboard"
+                onClick={() => setMenuOpen(false)}
+                className="w-full flex items-center justify-center gap-3 py-3 text-center text-sm font-bold rounded-xl bg-primary text-white shadow-md hover:bg-primary-mid transition-colors"
+              >
+                <LayoutDashboard size={18} /> Dashboard
+              </Link>
+              <button
+                onClick={async () => {
+                  setMenuOpen(false)
+                  await logout()
+                  navigate('/login')
+                }}
+                className="w-full mt-2 flex items-center justify-center gap-3 py-3 text-center text-sm font-bold rounded-xl bg-danger-bg text-danger hover:bg-red-100 transition-colors"
+              >
+                <LogOut size={18} /> Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                onClick={() => setMenuOpen(false)}
+                className="w-full py-3 text-center text-sm font-bold rounded-xl border-2 border-border text-text-primary hover:bg-gray-50 transition-colors"
+              >
+                Log In
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setMenuOpen(false)}
+                className="w-full py-3 text-center text-sm font-bold rounded-xl bg-text-primary text-white hover:bg-black transition-colors"
+              >
+                Sign Up Free
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </>

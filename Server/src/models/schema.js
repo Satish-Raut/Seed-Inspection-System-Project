@@ -9,6 +9,7 @@ import {
   json, 
   boolean 
 } from 'drizzle-orm/mysql-core';
+import { relations } from 'drizzle-orm';
 
 /**
  * 🗄️ MODELS / SCHEMA DEFINITION
@@ -90,3 +91,48 @@ export const reports = mysqlTable('reports', {
   emailSent:      boolean('email_sent').default(false),
   createdAt:      timestamp('created_at').defaultNow(),
 });
+
+/* ==========================================================================
+   🔗 RELATIONSHIPS (Drizzle ORM)
+   These define how tables connect. We use this to write powerful relational 
+   queries like: db.query.inspectors.findFirst({ with: { inspections: true } })
+   ========================================================================== */
+
+// 1. Inspector -> Inspections (One-to-Many)
+export const inspectorsRelations = relations(inspectors, ({ many }) => ({
+  inspections: many(inspections),
+}));
+
+// 2. Inspection -> Inspector (Many-to-One), Stage Data, Reports, Field Registration
+export const inspectionsRelations = relations(inspections, ({ one, many }) => ({
+  inspector: one(inspectors, {
+    fields: [inspections.inspectorId],
+    references: [inspectors.id],
+  }),
+  fieldRegistration: one(fieldRegistrations, {
+    fields: [inspections.id],
+    references: [fieldRegistrations.inspectionId],
+  }),
+  stageData: many(stageData),
+  report: one(reports, {
+    fields: [inspections.id],
+    references: [reports.inspectionId],
+  })
+}));
+
+// 3. Stage Data -> Inspection (Many-to-One), Stage Photos (One-to-Many)
+export const stageDataRelations = relations(stageData, ({ one, many }) => ({
+  inspection: one(inspections, {
+    fields: [stageData.inspectionId],
+    references: [inspections.id],
+  }),
+  photos: many(stagePhotos),
+}));
+
+// 4. Stage Photos -> Stage Data (Many-to-One)
+export const stagePhotosRelations = relations(stagePhotos, ({ one }) => ({
+  stageData: one(stageData, {
+    fields: [stagePhotos.stageDataId],
+    references: [stageData.id],
+  }),
+}));

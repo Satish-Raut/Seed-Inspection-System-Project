@@ -5,7 +5,7 @@ import axios from 'axios'
  * In development, it points to localhost:5000/api
  * In production, it will use the environment variable VITE_API_URL
  */
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_URL = 'http://localhost:5000/api'
 
 const api = axios.create({
   baseURL: API_URL,
@@ -64,7 +64,7 @@ api.interceptors.response.use(
         // If refresh also fails, the session is truly dead -> Log out user
         console.error('Refresh Token failed or expired:', refreshError)
         localStorage.removeItem('si_user')
-        window.location.href = '/login'
+        // We let the components (like ProtectedRoute or AuthContext) handle state/redirects
         return Promise.reject(refreshError)
       }
     }
@@ -96,6 +96,12 @@ export const loginInspector = (data) => api.post('/auth/login', data)
  * @returns {Promise} - Returns the inspector's detailed database entry.
  */
 export const getMe = () => api.get('/auth/me')
+
+/**
+ * Logout the inspector (clears backend cookie)
+ * @returns {Promise}
+ */
+export const logoutInspector = () => api.post('/auth/logout')
 
 
 /* ==========================================================================

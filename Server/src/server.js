@@ -1,4 +1,6 @@
 import dotenv from "dotenv";
+import express from "express";
+import cors from "cors"
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 
@@ -10,9 +12,13 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // {Define the Required Middlewares}
+app.use(cors({ 
+  origin: "http://localhost:5173",
+  credentials: true,
+}));
+
 app.use(express.json()); // Parses incoming JSON requests
 app.use(cookieParser()); // Allows server to read cookies
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true })); // Allows frontend to talk to backend
 
 // {Define the routes}
 app.use("/api/auth", authRoutes); // Authentication (Register, Login, Refresh, Logout)  

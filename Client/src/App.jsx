@@ -8,6 +8,7 @@ import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import Profile from './pages/Profile'
 import SelectCrop from './pages/inspection/SelectCrop'
 import ProductionType from './pages/inspection/ProductionType'
 import FieldRegistration from './pages/inspection/FieldRegistration'
@@ -51,6 +52,10 @@ const router = createBrowserRouter([
       {
         path: "dashboard",
         element: <ProtectedRoute><Dashboard /></ProtectedRoute>,
+      },
+      {
+        path: "profile",
+        element: <ProtectedRoute><Profile /></ProtectedRoute>,
       },
       {
         path: "inspection/:id",

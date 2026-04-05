@@ -1,6 +1,7 @@
 import mysql from "mysql2/promise";
 import { drizzle } from "drizzle-orm/mysql2";
 import dotenv from "dotenv";
+import * as schema from "../models/schema.js";
 
 dotenv.config();
 
@@ -12,4 +13,4 @@ const connection = await mysql.createConnection({
   database: process.env.DB_NAME,
 });
 
-export const db = drizzle(connection);  
+export const db = drizzle(connection, { schema, mode: "default" });  
