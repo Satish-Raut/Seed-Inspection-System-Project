@@ -31,27 +31,27 @@ export const PRODUCTION_TYPES = [
 export const STAGES = [
   {
     number: 1,
-    name: 'Vegetative / Pre-Flowering',
+    name: 'Vegetative',
     description: 'Assess plant stand uniformity and disease checks',
     icon: '🌱',
   },
   {
     number: 2,
+    name: 'Pre-Flowering',
+    description: 'Monitor early reproductive growth before anthesis begins',
+    icon: '🌿',
+  },
+  {
+    number: 3,
     name: 'Flowering',
     description: 'Monitor anthesis uniformity and cross-pollination risk',
     icon: '🌸',
   },
   {
-    number: 3,
-    name: 'Post-Flowering / Pre-Harvest',
+    number: 4,
+    name: 'Pre-Harvest',
     description: 'Evaluate maturity, moisture and harvest readiness',
     icon: '🌾',
-  },
-  {
-    number: 4,
-    name: 'Final Seed Check',
-    description: 'Hybrid only — final quality and germination estimate',
-    icon: '🔬',
   },
 ]
 

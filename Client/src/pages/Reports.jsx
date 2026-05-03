@@ -205,7 +205,7 @@ function ReportDetailOverlay({ inspection, onClose, onDownload, onResume, format
                     </div>
                     <div>
                       <h4 className="font-bold text-text-primary text-lg">
-                        {stage.stageNumber === 1 ? 'Vegetative' : stage.stageNumber === 2 ? 'Flowering' : 'Pre-Harvest'} Inspection
+                        {['Vegetative', 'Pre-Flowering', 'Flowering', 'Pre-Harvest'][stage.stageNumber - 1] || `Stage ${stage.stageNumber}`} Inspection
                       </h4>
                       <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Completed on {new Date(stage.timestamp).toLocaleDateString()}</p>
                     </div>

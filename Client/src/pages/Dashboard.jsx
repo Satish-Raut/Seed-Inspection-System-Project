@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Clock, CheckCircle2, XCircle, Plus, Play, FileText, Loader2 } from 'lucide-react'
+import { Clock, CheckCircle2, XCircle, Plus, Play, FileText, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import AppLayout from '../components/AppLayout'
 import { useAuth } from '../hooks/useAuth'
 import { useInspection } from '../hooks/useInspection'
@@ -16,6 +16,7 @@ function StatCard({ icon: Icon, count, label, color, bg }) {
 }
 
 export default function Dashboard() {
+  const [showAll, setShowAll] = useState(false);
   const { user } = useAuth();
   
   const { 
@@ -60,7 +61,8 @@ export default function Dashboard() {
     navigate(dest);
   }
 
-  const recentInspections = safeInspections.slice(0, 3)
+  const INITIAL_DISPLAY_COUNT = 6;
+  const recentInspections = showAll ? safeInspections : safeInspections.slice(0, INITIAL_DISPLAY_COUNT);
 
   const greeting = () => {
     const h = new Date().getHours()
@@ -131,6 +133,27 @@ export default function Dashboard() {
                   </div>
                 ))}
               </div>
+
+              {safeInspections.length > INITIAL_DISPLAY_COUNT && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    onClick={() => setShowAll(!showAll)}
+                    className="flex items-center gap-2 text-primary font-bold text-xs py-2 px-4 rounded-xl border border-primary-light bg-primary-lighter hover:bg-primary-light transition-colors"
+                  >
+                    {showAll ? (
+                      <>
+                        <ChevronUp size={16} />
+                        Show Less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown size={16} />
+                        Show More ({safeInspections.length - INITIAL_DISPLAY_COUNT} others)
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

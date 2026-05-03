@@ -6,40 +6,49 @@ const AuthContext = createContext(null)
 /**
  * 🔐 AUTH PROVIDER
  * This is the SINGLE source of truth for the user's authentication state.
+ * 
+ * Two separate loading flags:
+ *  - initializing: true only during the startup /auth/me rehydration check
+ *  - loading:      true only when the user actively clicks Login or Register
  */
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState(null)
+  const [user, setUser]             = useState(null)
+  const [initializing, setInitializing] = useState(true)  // startup check
+  const [loading, setLoading]       = useState(false)      // user action only
+  const [error, setError]           = useState(null)
 
   const clearError = () => setError(null)
 
   /**
    * 🔄 REHYDRATION (App Load)
-   * On mount, we check if an active session exists by calling /auth/me.
+   * On mount, check if an active session exists by calling /auth/me.
+   * Uses `initializing` — NOT `loading` — so login/register buttons
+   * are never affected by this background check.
    */
   useEffect(() => {
     const rehydrate = async () => {
-      // 🕵️ Check if we are already on a public auth page to avoid unnecessary calls
       const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register'
-      
-      const hasToken = localStorage.getItem('si_user')
+      const hasToken   = localStorage.getItem('si_user')
 
-      // Optimization: If no token and already on login page, don't even try the API
+      // No token + on auth page → nothing to rehydrate, skip the API call
       if (!hasToken && isAuthPage) {
-        setLoading(false)
+        setInitializing(false)
         return
       }
 
-      try {
-        const { data } = await api.getMe()
-        setUser(data)
-      } catch (err) {
-        // Silent fail is okay, it just means the session is dead
-        setUser(null)
-      } finally {
-        setLoading(false)
+      // Has token → verify it's still valid with the server
+      if (hasToken) {
+        try {
+          const { data } = await api.getMe()
+          setUser(data)
+        } catch {
+          // Session expired or invalid — silently clear it
+          localStorage.removeItem('si_user')
+          setUser(null)
+        }
       }
+
+      setInitializing(false)
     }
     rehydrate()
   }, [])
@@ -49,7 +58,6 @@ export function AuthProvider({ children }) {
     setError(null)
     try {
       const { data } = await api.registerInspector(formData)
-      console.log("Data after Registration: ", data);
       localStorage.setItem('si_user', JSON.stringify({ accessToken: data.accessToken }))
       setUser(data.user)
       return { success: true }
@@ -88,6 +96,19 @@ export function AuthProvider({ children }) {
       localStorage.removeItem('si_user')
       setUser(null)
     }
+  }
+
+  // While rehydrating on first load, show a minimal full-screen loader
+  // so pages don't flash an empty/broken state
+  if (initializing) {
+    return (
+      <div className="min-h-screen bg-app-bg flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-text-muted text-sm font-medium">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -72,9 +72,9 @@ export default function WheatStage1({ stageNumber = 1 }) {
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    submitStage(stageNumber, form)
+    await submitStage(stageNumber, form)
     navigate(`/inspection/${current.id}/${current.cropType || 'wheat'}/${current.productionType || 'hybrid'}/stages`)
   }
 

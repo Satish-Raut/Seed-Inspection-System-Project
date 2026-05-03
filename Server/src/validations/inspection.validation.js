@@ -41,11 +41,23 @@ export const fieldRegistrationSchema = z.object({
 /**
  * 🛡️ STAGE DATA SCHEMA
  * Validates the submission of a specific inspection stage form.
+ * 
+ * formData is crop + stage specific (z.any() keeps it flexible):
+ * 
+ * Wheat Stage 1 (Vegetative):    { plantStand, offTypesCount, ... }
+ * Wheat Stage 2 (Pre-Flowering): { morphologicalDeviationCount, floweringSynchrony, ... }
+ * Wheat Stage 3 (Flowering):     { 
+ *   counts: [{ totalPlants, offTypes, volunteerPlants, objectionableWeeds, 
+ *              diseasedPlants, inseparableOtherCrops }],
+ *   maturityUniformity, moistureEstimation, equipmentCleaned,
+ *   separateThreshing, yieldEstimation, notes
+ * }
+ * Wheat Stage 4 (Pre-Harvest):   { ... }
  */
 export const stageDataSchema = z.object({
   stageNumber: z.number().int().min(1, 'Stage number is required and must be positive'),
   stageName: z.string().optional(),
-  formData: z.any(), // Allows dynamic custom JSON depending on the crop
+  formData: z.any(), // Allows dynamic custom JSON depending on the crop/stage
   notes: z.string().optional()
 });
 

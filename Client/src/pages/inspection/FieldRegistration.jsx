@@ -43,9 +43,10 @@ export default function FieldRegistration() {
          latitude:  pos.latitude.toFixed(6),
          longitude: pos.longitude.toFixed(6),
        }))
-       setGpsStatus('✅ Location captured successfully!')
-    } else if (gpsError) {
-       setGpsStatus(`❌ ${gpsError}`)
+       setGpsStatus(`✅ Location captured! (±${Math.round(pos.accuracy)}m accuracy)`)
+    } else {
+       // gpsError state is already set inside the hook with a friendly message
+       setGpsStatus(`❌ ${gpsError || 'Could not get location. Please try again.'}`)
     }
   }
 

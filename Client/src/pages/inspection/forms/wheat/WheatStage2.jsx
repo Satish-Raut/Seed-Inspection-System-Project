@@ -36,9 +36,9 @@ export default function WheatStage2({ stageNumber = 2 }) {
     setForm((p) => ({ ...p, [name]: type === 'checkbox' ? checked : value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    submitStage(stageNumber, form)
+    await submitStage(stageNumber, form)
     navigate(`/inspection/${current.id}/${current.cropType || 'wheat'}/${current.productionType || 'hybrid'}/stages`)
   }
 
