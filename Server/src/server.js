@@ -5,6 +5,8 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import inspectionRoutes from "./routes/inspection.routes.js";
 import reportRoutes from "./routes/report.routes.js";
+import { db, pool } from "./db/index.js";
+import { sql } from "drizzle-orm";
 
 // { Load environment variables}
 dotenv.config({ quiet: true });
@@ -37,7 +39,25 @@ app.use("/api/reports", reportRoutes);         // Final Certificates
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Seed Inspection API is running!', status: 'OK' });
 });
-// Start the server
-app.listen(PORT, () => {
+
+// Start the server & warm up DB connection
+app.listen(PORT, async () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
+
+  // Initial warmup — wake up TiDB Serverless on boot
+  try {
+    await db.execute(sql`SELECT 1`);
+    console.log("✅ Database connection warmed up!");
+  } catch (err) {
+    console.error("❌ DB warmup failed:", err.message);
+  }
+
+  // Keepalive ping every 30 seconds — prevents TiDB Serverless cold starts
+  setInterval(async () => {
+    try {
+      await pool.query("SELECT 1");
+    } catch (err) {
+      console.error("⚠️ DB keepalive ping failed:", err.message);
+    }
+  }, 30000);
 });

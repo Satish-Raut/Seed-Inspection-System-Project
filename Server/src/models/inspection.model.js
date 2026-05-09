@@ -1,6 +1,6 @@
-import { eq } from 'drizzle-orm';
+import { eq, desc, inArray } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { inspections, fieldRegistrations, stageData } from './schema.js';
+import { inspections, fieldRegistrations, stageData, reports, inspectors } from './schema.js';
 
 /**
  * 🗄️ CREATE INSPECTION
@@ -11,14 +11,12 @@ export const createInspectionDb = async (data, inspectorId) => {
     ...data,
     inspectorId
   });
-  
-  // Return the newly created record ID
   return result.insertId;
 };
 
 /**
  * 🗄️ UPDATE INSPECTION
- * Modifies an existing inspection's base properties (e.g. crop type, stages).
+ * Modifies an existing inspection's base properties.
  */
 export const updateInspectionDb = async (inspectionId, data) => {
   await db.update(inspections)
@@ -28,51 +26,80 @@ export const updateInspectionDb = async (inspectionId, data) => {
 
 /**
  * 🗄️ GET ALL INSPECTIONS FOR AN INSPECTOR
- * Fetches summary list of all inspections belonging to the logged-in user.
+ * Uses separate queries instead of lateral joins for TiDB compatibility.
  */
 export const getInspectionsByInspector = async (inspectorId) => {
-  return await db.query.inspections.findMany({
-    where: eq(inspections.inspectorId, inspectorId),
-    orderBy: (inspections, { desc }) => [desc(inspections.createdAt)],
-    with: {
-      fieldRegistration: true,
-      stageData: true
-    }
-  });
+  // 1. Get all inspections
+  const inspectionList = await db.select()
+    .from(inspections)
+    .where(eq(inspections.inspectorId, inspectorId))
+    .orderBy(desc(inspections.createdAt));
+
+  if (inspectionList.length === 0) return [];
+
+  const ids = inspectionList.map(i => i.id);
+
+  // 2. Get field registrations for all inspections
+  const fieldRegs = await db.select()
+    .from(fieldRegistrations)
+    .where(inArray(fieldRegistrations.inspectionId, ids));
+
+  // 3. Get stage data for all inspections
+  const stages = await db.select()
+    .from(stageData)
+    .where(inArray(stageData.inspectionId, ids));
+
+  // 4. Combine into one object per inspection
+  return inspectionList.map(inspection => ({
+    ...inspection,
+    fieldRegistration: fieldRegs.find(f => f.inspectionId === inspection.id) || null,
+    stageData: stages.filter(s => s.inspectionId === inspection.id),
+  }));
 };
 
 /**
  * 🗄️ GET FULL INSPECTION WITH DETAILS
- * Powerful relational query fetching the inspection PLUS its linked field data and stages.
+ * Fetches the inspection + its field registration and stage data separately.
  */
 export const getInspectionWithDetails = async (inspectionId) => {
-  return await db.query.inspections.findFirst({
-    where: eq(inspections.id, inspectionId),
-    with: {
-      fieldRegistration: true,
-      stageData: true
-    }
-  });
+  // 1. Get inspection
+  const [inspection] = await db.select()
+    .from(inspections)
+    .where(eq(inspections.id, inspectionId));
+
+  if (!inspection) return null;
+
+  // 2. Get field registration
+  const [fieldReg] = await db.select()
+    .from(fieldRegistrations)
+    .where(eq(fieldRegistrations.inspectionId, inspectionId));
+
+  // 3. Get stage data
+  const stages = await db.select()
+    .from(stageData)
+    .where(eq(stageData.inspectionId, inspectionId));
+
+  return {
+    ...inspection,
+    fieldRegistration: fieldReg || null,
+    stageData: stages,
+  };
 };
 
 /**
  * 🗄️ UPSERT FIELD REGISTRATION
- * Updates if exists, otherwise inserts new field details for an inspection.
  */
 export const upsertFieldRegistrationDb = async (inspectionId, data) => {
-  // Check if it already exists
-  const existing = await db.query.fieldRegistrations.findFirst({
-    where: eq(fieldRegistrations.inspectionId, inspectionId)
-  });
+  const [existing] = await db.select()
+    .from(fieldRegistrations)
+    .where(eq(fieldRegistrations.inspectionId, inspectionId));
 
   if (existing) {
-    // Update
     await db.update(fieldRegistrations)
       .set(data)
       .where(eq(fieldRegistrations.inspectionId, inspectionId));
     return { ...existing, ...data };
   } else {
-    // Insert
     const [result] = await db.insert(fieldRegistrations).values({
       inspectionId,
       ...data
@@ -83,7 +110,6 @@ export const upsertFieldRegistrationDb = async (inspectionId, data) => {
 
 /**
  * 🗄️ INSERT STAGE DATA
- * Adds a new stage submission record for an inspection.
  */
 export const insertStageDataDb = async (inspectionId, data) => {
   const [result] = await db.insert(stageData).values({
@@ -91,13 +117,11 @@ export const insertStageDataDb = async (inspectionId, data) => {
     ...data,
     completedAt: new Date()
   });
-  
   return result.insertId;
 };
 
 /**
  * 🗄️ UPDATE STAGE DATA
- * Updates an existing stage record.
  */
 export const updateStageDataDb = async (stageId, data) => {
   await db.update(stageData)
@@ -107,28 +131,62 @@ export const updateStageDataDb = async (stageId, data) => {
 
 /**
  * 🗄️ CREATE FINAL REPORT
- * Issues the verdict/certificate.
  */
-import { reports } from './schema.js';
+import { reports as reportsTable } from './schema.js';
 
 export const createReportDb = async (data) => {
-  const [result] = await db.insert(reports).values(data);
+  const [result] = await db.insert(reportsTable).values(data);
   return result.insertId;
 };
 
 /**
  * 🗄️ GET ALL REPORTS
+ * Uses separate queries instead of lateral joins for TiDB compatibility.
  */
 export const getAllReportsDb = async () => {
-  return await db.query.reports.findMany({
-    orderBy: (reports, { desc }) => [desc(reports.createdAt)],
-    with: {
-      inspection: {
-        with: {
-          fieldRegistration: true,
-          inspector: true
-        }
-      }
-    }
+  // 1. Get all reports
+  const allReports = await db.select()
+    .from(reportsTable)
+    .orderBy(desc(reportsTable.createdAt));
+
+  if (allReports.length === 0) return [];
+
+  const inspectionIds = allReports.map(r => r.inspectionId).filter(Boolean);
+
+  // 2. Get related inspections
+  const relatedInspections = await db.select()
+    .from(inspections)
+    .where(inArray(inspections.id, inspectionIds));
+
+  const inspectorIds = relatedInspections.map(i => i.inspectorId).filter(Boolean);
+
+  // 3. Get related inspectors
+  const relatedInspectors = await db.select()
+    .from(inspectors)
+    .where(inArray(inspectors.id, inspectorIds));
+
+  // 4. Get related field registrations
+  const relatedFieldRegs = await db.select()
+    .from(fieldRegistrations)
+    .where(inArray(fieldRegistrations.inspectionId, inspectionIds));
+
+  // 5. Combine everything
+  return allReports.map(report => {
+    const inspection = relatedInspections.find(i => i.id === report.inspectionId) || null;
+    const inspector = inspection
+      ? relatedInspectors.find(i => i.id === inspection.inspectorId) || null
+      : null;
+    const fieldReg = inspection
+      ? relatedFieldRegs.find(f => f.inspectionId === inspection.id) || null
+      : null;
+
+    return {
+      ...report,
+      inspection: inspection ? {
+        ...inspection,
+        fieldRegistration: fieldReg,
+        inspector,
+      } : null,
+    };
   });
 };

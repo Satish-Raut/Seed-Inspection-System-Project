@@ -5,10 +5,15 @@ import * as schema from "../models/schema.js";
 
 dotenv.config();
 
-const connectionConfig = process.env.DATABASE_URL
+const poolConfig = process.env.DATABASE_URL
   ? { 
       uri: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
+      ssl: { rejectUnauthorized: false },
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0,
     }
   : {
       host: process.env.DB_HOST,
@@ -16,9 +21,15 @@ const connectionConfig = process.env.DATABASE_URL
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : undefined
+      ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : undefined,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0,
     };
 
-const connection = await mysql.createConnection(connectionConfig);
+const pool = mysql.createPool(poolConfig);
 
-export const db = drizzle(connection, { schema, mode: "default" });
+export const db = drizzle(pool, { schema, mode: "default" });
+export { pool }; // Export raw pool for keepalive pings
